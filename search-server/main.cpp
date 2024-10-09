@@ -70,7 +70,7 @@ public:
 		}
 		documents_.emplace(document_id, DocumentData{ ComputeAverageRating(ratings),status });
 	}
-	
+
 	template <typename DocumentPredicate>
 	vector<Document> FindTopDocuments(const string& raw_query, DocumentPredicate document_predicate) const {
 		const Query query = ParseQuery(raw_query);
@@ -90,20 +90,16 @@ public:
 		}
 		return matched_documents;
 	}
-vector<Document> FindTopDocuments(const string& raw_query) const {
+	vector<Document> FindTopDocuments(const string& raw_query) const { // Принимает только запрос
 
 		return FindTopDocuments(raw_query, DocumentStatus::ACTUAL);
 	}
- 
-vector<Document> FindTopDocuments(const string& raw_query, DocumentStatus status) const {
-	switch (status) {
-	case DocumentStatus::ACTUAL:return FindTopDocuments(raw_query, [](int document_id, DocumentStatus status, int rating) {return status == DocumentStatus::ACTUAL; }); break;
-	case DocumentStatus::IRRELEVANT:return FindTopDocuments(raw_query, [](int document_id, DocumentStatus status, int rating) {return status == DocumentStatus::IRRELEVANT; }); break;
-	case DocumentStatus::BANNED:return FindTopDocuments(raw_query, [](int document_id, DocumentStatus status, int rating) {return status == DocumentStatus::BANNED; }); break;
-	case DocumentStatus::REMOVED:return FindTopDocuments(raw_query, [](int document_id, DocumentStatus status, int rating) {return status == DocumentStatus::REMOVED; }); break;
-	default:return FindTopDocuments(raw_query, [](int document_id, DocumentStatus status, int rating) {return false; });
-	}		
-}
+
+	vector<Document> FindTopDocuments(const string& raw_query, DocumentStatus desired_status) const {
+		return FindTopDocuments(raw_query, [desired_status](int document_id, DocumentStatus status, int rating) {
+			return status == desired_status;
+			});
+	}
 
 	int GetDocumentCount() const {
 		return documents_.size();
@@ -256,7 +252,7 @@ void PrintDocument(const Document& document) {
 }
 
 int main() {
-	SearchServer search_server;
+	SearchServer search_server;		
 	search_server.SetStopWords("и в на"s);
 	search_server.AddDocument(0, "белый кот и модный ошейник"s, DocumentStatus::ACTUAL, { 8, -3 });
 	search_server.AddDocument(1, "пушистый кот пушистый хвост"s, DocumentStatus::ACTUAL, { 7, 2, 7 });
